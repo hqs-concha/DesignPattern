@@ -1,4 +1,5 @@
-﻿using DesignPattern.Interface;
+﻿using System.Threading.Tasks;
+using DesignPattern.Interface;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DesignPattern.Controllers
@@ -18,11 +19,12 @@ namespace DesignPattern.Controllers
             _customerService = customerService;
         }
 
-        public IActionResult Index([FromQuery] int id)
+        public async Task<IActionResult> Index([FromQuery] int id)
         {
             var hasCache = _customerService.Get(id);
             var noCache = _customerService.NoAspect();
-            return Ok(hasCache);
+            var asyncMethod = await _customerService.GetAsync(id);
+            return Ok(new {hasCache, noCache, asyncMethod});
         }
     }
 }

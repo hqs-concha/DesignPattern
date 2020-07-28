@@ -1,15 +1,16 @@
 ﻿
-using Autofac.Extras.DynamicProxy;
+using System.Threading.Tasks;
 using DesignPattern.Attributes;
-using DesignPattern.Interceptor;
 
 namespace DesignPattern.Interface
 {
-    [Intercept(typeof(CustomInterceptor))]
-    public interface ICustomerService
+    public interface ICustomerService : IScopeService
     {
-        [Cache("test")]
+        [Cache(Key = "test", ExpireMinutes = 1)]
         object Get(int id);
+
+        [Cache(Key = "test-async")]
+        Task<string> GetAsync(int id);
 
         object NoAspect();
     }

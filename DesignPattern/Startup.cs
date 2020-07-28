@@ -5,6 +5,7 @@ using Autofac.Extras.DynamicProxy;
 using DesignPattern.Interceptor;
 using DesignPattern.Interface;
 using DesignPattern.Interface.Event;
+using DesignPattern.Modules;
 using DesignPattern.Services;
 using DesignPattern.Services.Event;
 using Microsoft.AspNetCore.Builder;
@@ -54,8 +55,7 @@ namespace DesignPattern
 
         public void ConfigureContainer(ContainerBuilder builder)
         {
-            builder.RegisterType<CustomInterceptor>();
-            builder.RegisterType<CustomerService>().As<ICustomerService>().InstancePerLifetimeScope().EnableInterfaceInterceptors();
+            builder.RegisterModule(new AutofacModule());
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

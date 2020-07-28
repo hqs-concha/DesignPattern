@@ -5,11 +5,7 @@ namespace DesignPattern.Attributes
     [AttributeUsage(AttributeTargets.Method)]
     public class CacheAttribute : Attribute
     {
-        public string Name { get; set; }
-
-        public CacheAttribute(string name)
-        {
-            Name = name;
-        }
+        public string Key { get; set; }
+        public int ExpireMinutes { get; set; } = 30;
     }
 }

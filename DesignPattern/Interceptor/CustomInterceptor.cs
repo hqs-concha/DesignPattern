@@ -31,17 +31,20 @@ namespace DesignPattern.Interceptor
                     _logger.LogInformation($"拦截方法：{invocation.Method.DeclaringType?.Name}.{invocation.Method.Name}");
 
                     var argument = invocation.Arguments.FirstOrDefault();
-                    var value = _cache.Get($"{cacheAttr.Name}-{argument}");
+                    var value = _cache.Get<string>($"{cacheAttr.Key}-{argument}");
                     if (value != null)
-                        invocation.ReturnValue = value;
+                    {
+                        ReturnMethod(value, invocation);
+                        return;
+                    }
                     else
                     {
                         invocation.Proceed();
-                        value = invocation.ReturnValue;
-                        _cache.Set($"{cacheAttr.Name}-{argument}", value, TimeSpan.FromHours(1));
+                        value = GetReturnValue(invocation);
+                        _cache.Set($"{cacheAttr.Key}-{argument}", value, TimeSpan.FromMinutes(cacheAttr.ExpireMinutes));
                     }
-                
-                    _logger.LogInformation($"{DateTime.Now:s}，方法返回值：{JsonSerializer.Serialize(value)}");
+
+                    _logger.LogInformation($"{DateTime.Now:s}，方法返回值：{value}");
                 }
                 else
                 {
@@ -51,20 +54,34 @@ namespace DesignPattern.Interceptor
             catch (Exception e)
             {
                 _logger.LogInformation($"出错了：{e.Message}");
-                invocation.ReturnValue = new {success = 1, message = e.Message};
+                invocation.ReturnValue = new { success = 1, message = e.Message };
             }
         }
 
-        private object GetReturnValue(IInvocation invocation)
+        private void ReturnMethod(string returnValue, IInvocation invocation)
+        {
+            var method = invocation.MethodInvocationTarget ?? invocation.Method;
+
+            var returnType = typeof(Task).IsAssignableFrom(method.ReturnType)
+                ? method.ReturnType.GenericTypeArguments.FirstOrDefault()
+                : method.ReturnType;
+
+            dynamic result = JsonSerializer.Deserialize(returnValue, returnType);
+            invocation.ReturnValue = typeof(Task).IsAssignableFrom(method.ReturnType) ? Task.FromResult(result) : result;
+        }
+
+
+        private string GetReturnValue(IInvocation invocation)
         {
             var value = invocation.ReturnValue;
-            if (invocation.Method.ReturnType.BaseType == typeof(Task))
+            var type = invocation.Method.ReturnType;
+            if (typeof(Task).IsAssignableFrom(type))
             {
-                var task = (Task<object>) value;
-                value = task.Result;
+                var resultProperty = type.GetProperty("Result");
+                value = resultProperty.GetValue(invocation.ReturnValue);
             }
 
-            return value;
+            return JsonSerializer.Serialize(value);
         }
     }
 }
